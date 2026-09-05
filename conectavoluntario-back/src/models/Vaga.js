@@ -11,11 +11,11 @@ const vagaSchema = new mongoose.Schema({
   },
   formato: {
     type: String,
-    enum: ['Presencial', 'Remoto', 'Híbrido'], // Limita as opções
+    enum: ['Presencial', 'Remoto', 'Híbrido'], 
     required: true,
   },
   localizacao: {
-    type: String, // "São Paulo, SP" ou "Online"
+    type: String, 
   },
   horario: {
     type: String, 
@@ -25,13 +25,11 @@ const vagaSchema = new mongoose.Schema({
     enum: ['Aberta', 'Fechada'],
     default: 'Aberta',
   },
-  // Relacionamento: Qual ONG criou essa vaga?
   ongId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Ong',
     required: true,
   },
-  // Relacionamento: Quem se candidatou?
   candidatos: [{
     voluntarioId: {
       type: mongoose.Schema.Types.ObjectId,
