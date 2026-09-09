@@ -1,4 +1,3 @@
-// Criar uma nova ONG no MongoDB
 exports.criarOng = async (req, res) => {
   try {
     const { nomeFantasia, cnpj, email, senha, descricao } = req.body;

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Definimos o "molde" do voluntário usando o Mongoose
 const voluntarioSchema = new mongoose.Schema({
   nome: {
     type: String,

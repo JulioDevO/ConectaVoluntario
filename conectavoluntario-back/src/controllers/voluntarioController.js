@@ -2,7 +2,6 @@ const Voluntario = require('../models/Voluntario');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Login
 exports.loginVoluntario = async (req, res) => {
   try {
     const { email, senha } = req.body;
@@ -26,7 +25,6 @@ exports.loginVoluntario = async (req, res) => {
   }
 };
 
-// CRUD
 exports.listarVoluntarios = async (req, res) => {
   const voluntarios = await Voluntario.find();
   res.status(200).json(voluntarios);
