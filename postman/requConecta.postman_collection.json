@@ -1,0 +1,355 @@
+{
+  "info": {
+    "_postman_id": "4ea57bcb-9638-4987-ab9c-fd8ff85c06fb",
+    "name": "requConecta",
+    "description": "Coleção de consultas para o projeto Conecta Voluntário.\n\nPré-requisito: iniciar o backend com `npm start` dentro de conectavoluntario-back.\nURL padrão: http://localhost:3000.\n\nObservação: no estado atual do projeto, o src/index.js registra somente /api/vagas e /graphql. As rotas REST de ONG e voluntário existem nos arquivos de rotas, mas ainda não foram conectadas ao Express.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57745760",
+    "_collection_link": "https://go.postman.co/collection/57745760-4ea57bcb-9638-4987-ab9c-fd8ff85c06fb?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "REST - Vagas",
+      "item": [
+        {
+          "name": "Listar vagas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/vagas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vagas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar vagas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Apoio em redes sociais\",\n  \"descricao\": \"Auxiliar na divulgação das ações da ONG.\",\n  \"formato\": \"Remoto\",\n  \"localizacao\": \"Brasil\",\n  \"horario\": \"Sábados, 9h às 12h\",\n  \"ongId\": \"6a99fdad26224f317cff678b\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/vagas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "vagas"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GraphQL - Consultas",
+      "item": [
+        {
+          "name": "Verificar API",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ mensagem }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar vagas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ listarVagas { _id titulo descricao formato localizacao horario status } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar voluntários",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ listarVoluntarios { _id nome email telefone causas } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Listar ONGs",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"{ listarOngs { _id nome nomeFantasia email cidade cnpj } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "GraphQL - Mutações",
+      "item": [
+        {
+          "name": "Criar voluntário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { criarVoluntario(nome: \\\"Maria da Silva\\\", email: \\\"maria.teste@exemplo.com\\\", senha: \\\"123456\\\", telefone: \\\"11999999999\\\") { _id nome email telefone causas } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar ONG",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { criarOng(nome: \\\"ONG Exemplo\\\", nomeFantasia: \\\"ONG Esperança\\\", email: \\\"ong.teste@exemplo.com\\\", cidade: \\\"São Paulo\\\", senha: \\\"123456\\\", cnpj: \\\"12.345.678/0001-90\\\") { _id nome nomeFantasia email cidade cnpj } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Criar vaga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { criarVaga(titulo: \\\"Apoio voluntário\\\", descricao: \\\"Apoio em ações sociais.\\\", formato: \\\"Presencial\\\", localizacao: \\\"São Paulo\\\", horario: \\\"Sábados pela manhã\\\", status: \\\"Aberta\\\", ongId: \\\"{{ongId}}\\\") { _id titulo descricao formato localizacao horario status } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remover voluntário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { removerVoluntario(id: \\\"{{voluntarioId}}\\\") { _id nome email } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remover ONG",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { removerOng(id: \\\"{{ongId}}\\\") { _id nomeFantasia email } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remover vaga",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"mutation { removerVaga(id: \\\"{{vagaId}}\\\") { _id titulo } }\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/graphql",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "graphql"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "ongId",
+      "value": "COLE_O_ID_DA_ONG_AQUI"
+    },
+    {
+      "key": "voluntarioId",
+      "value": "COLE_O_ID_DO_VOLUNTARIO_AQUI"
+    },
+    {
+      "key": "vagaId",
+      "value": "COLE_O_ID_DA_VAGA_AQUI"
+    }
+  ]
+}
