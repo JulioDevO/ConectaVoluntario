@@ -1,27 +1,11 @@
-// const Vaga = require('../models/Vaga');
+const Vaga = require('../models/Vaga');
 
 exports.listarVagas = async (req, res) => {
   try {
-    const vagasMock = [
-      { 
-        _id: '501', 
-        titulo: 'Professor(a) de Matemática', 
-        formato: 'Presencial',
-        localizacao: 'São Paulo, SP',
-        ongId: '101' // ID do Instituto Educar
-      },
-      { 
-        _id: '502', 
-        titulo: 'Mentor(a) de Carreira', 
-        formato: 'Remoto',
-        localizacao: 'Online',
-        ongId: '101'
-      }
-    ];
-    
-    res.status(200).json(vagasMock);
+    const vagas = await Vaga.find();
+    res.status(200).json(vagas);
   } catch (error) {
-    res.status(500).json({ erro: 'Erro ao buscar vagas' });
+    res.status(500).json({ erro: 'Erro ao buscar vagas', detalhe: error.message });
   }
 };
 
@@ -29,11 +13,22 @@ exports.criarVaga = async (req, res) => {
   try {
     const { titulo, descricao, formato, localizacao, horario, ongId } = req.body;
 
-    res.status(201).json({ 
-      mensagem: 'Vaga publicada com sucesso (Simulado)!',
-      dadosRecebidos: { titulo, formato, ongId }
+    const novaVaga = new Vaga({
+      titulo,
+      descricao,
+      formato,
+      localizacao,
+      horario,
+      ongId
+    });
+
+    await novaVaga.save();
+
+    res.status(201).json({
+      mensagem: 'Vaga publicada com sucesso no banco de dados!',
+      vaga: novaVaga
     });
   } catch (error) {
-    res.status(500).json({ erro: 'Erro ao criar vaga' });
+    res.status(400).json({ erro: 'Erro ao criar vaga', detalhe: error.message });
   }
 };
