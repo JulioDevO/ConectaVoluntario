@@ -14,6 +14,10 @@ const voluntarioSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  telefone: {
+    type: String,
+    required: true, 
+  },
   causas: [{
     type: String
   }],
