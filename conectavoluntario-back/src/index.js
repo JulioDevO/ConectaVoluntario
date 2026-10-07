@@ -1,9 +1,12 @@
 require('dotenv').config();
+
+require('./config/env');
 const express = require('express');
 const cors = require('cors');
 
 const conectarBanco = require('./config/db');
 const vagaRoutes = require('./routes/vagaRoutes');
+const ongRoutes = require('./routes/ongRoutes');
 
 const { ApolloServer } = require('apollo-server-express');
 
@@ -19,6 +22,7 @@ async function iniciarServidor() {
   app.use(express.json());
 
   app.use('/api/vagas', vagaRoutes);
+  app.use('/api/ongs', ongRoutes)
 
   const server = new ApolloServer({
     typeDefs,
