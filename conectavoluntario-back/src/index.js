@@ -1,10 +1,13 @@
 require('dotenv').config();
+
+require('./config/env');
 const express = require('express');
 const cors = require('cors');
 
 // Importações do Mongoose e Rotas REST
 const conectarBanco = require('./config/db');
 const vagaRoutes = require('./routes/vagaRoutes');
+const ongRoutes = require('./routes/ongRoutes');
 
 // Importação segura do Apollo para o Node 24
 const { ApolloServer } = require('apollo-server-express');
@@ -25,6 +28,7 @@ async function iniciarServidor() {
 
   // 3. Rotas REST antigas (continuam funcionando normalmente!)
   app.use('/api/vagas', vagaRoutes);
+  app.use('/api/ongs', ongRoutes)
 
   // 4. Configura o Apollo Server
   const server = new ApolloServer({
