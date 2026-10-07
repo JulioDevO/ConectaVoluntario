@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
+import CriarVaga from '../components/CriarVaga';
 
 export default function DashboardOng() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-6 py-12 sm:px-12">
-        
-        {/* Cabeçalho da ONG */}
         <div className="bg-white rounded-[32px] p-8 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center md:items-start gap-8 mb-8">
           <div className="w-32 h-32 rounded-3xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-4xl font-bold shrink-0">
             IE
@@ -22,7 +24,10 @@ export default function DashboardOng() {
             <p className="text-slate-500 mb-6">CNPJ: 12.345.678/0001-90 • contato@institutoeducar.org</p>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <button className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-full text-sm hover:bg-emerald-700 transition-colors shadow-sm">
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-full text-sm hover:bg-emerald-700 transition-colors shadow-sm"
+              >
                 + Criar Nova Vaga
               </button>
               <button className="px-6 py-2.5 bg-slate-100 text-slate-700 font-medium rounded-full text-sm hover:bg-slate-200 transition-colors">
@@ -32,14 +37,10 @@ export default function DashboardOng() {
           </div>
         </div>
 
-        {/* Grid do Painel */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Coluna Principal: Vagas Ativas */}
           <div className="lg:col-span-2 space-y-6">
             <h2 className="text-2xl font-bold tracking-tight">Nossas Vagas Ativas</h2>
             
-            {/* Vaga 1 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -62,7 +63,6 @@ export default function DashboardOng() {
               </div>
             </div>
 
-            {/* Vaga 2 */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -86,13 +86,11 @@ export default function DashboardOng() {
             </div>
           </div>
 
-          {/* Coluna Lateral: Candidaturas Recentes */}
           <div className="space-y-6">
             <h2 className="text-2xl font-bold tracking-tight">Candidaturas</h2>
             
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-4">
               
-              {/* Candidato 1 */}
               <div className="pb-4 border-b border-slate-100">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0">
@@ -109,7 +107,6 @@ export default function DashboardOng() {
                 </div>
               </div>
 
-              {/* Candidato 2 */}
               <div>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold text-sm shrink-0">
@@ -131,6 +128,16 @@ export default function DashboardOng() {
 
         </div>
       </main>
+      
+      {isModalOpen && (
+        <CriarVaga 
+          onClose={() => setIsModalOpen(false)} 
+          onVagaCriada={() => {
+            setIsModalOpen(false);
+            console.log("Vaga criada com sucesso!");
+          }} 
+        />
+      )}
     </div>
   );
 }

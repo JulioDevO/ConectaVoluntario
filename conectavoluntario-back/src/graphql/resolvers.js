@@ -94,6 +94,19 @@ const resolvers = {
       }
     },
 
+    atualizarVaga: async (_, { id, ...args }) => {
+      try {
+        const vagaAtualizada = await Vaga.findByIdAndUpdate(id, args, { new: true });
+        if (!vagaAtualizada) {
+          throw new Error("Vaga não encontrada.");
+        }
+        return vagaAtualizada;
+      } catch (erro) {
+        console.error("Erro ao atualizar vaga:", erro);
+        throw new Error("Falha ao atualizar a vaga.");
+      }
+    },
+
     removerVaga: async (_, { id }) => {
       try {
         const vagaRemovida = await Vaga.findByIdAndDelete(id);
