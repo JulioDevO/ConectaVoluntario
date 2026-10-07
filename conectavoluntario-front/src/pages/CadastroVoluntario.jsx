@@ -1,10 +1,25 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-export default function Cadastro() {
-  const [tipoUsuario, setTipoUsuario] = useState('voluntario'); // 'voluntario' ou 'ong'
-  const [interessesSelecionados, setInteressesSelecionados] = useState([]);
+export default function CadastroVoluntario() {
+  const navigate = useNavigate();
   
+  const [tipoUsuario, setTipoUsuario] = useState('voluntario');
+  const [interessesSelecionados, setInteressesSelecionados] = useState([]);
+  const [status, setStatus] = useState({ mensagem: '', tipo: '' });
+  
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  
+  const [nomeFantasia, setNomeFantasia] = useState('');
+  const [razaoSocial, setRazaoSocial] = useState('');
+  const [cnpj, setCnpj] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [descricao, setDescricao] = useState('');
+
   const causasDisponiveis = ['Educação', 'Meio Ambiente', 'Causa Animal', 'Saúde e Bem-estar', 'Inclusão Social', 'Combate à Fome'];
 
   const toggleInteresse = (causa) => {
@@ -15,14 +30,74 @@ export default function Cadastro() {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ mensagem: 'A processar cadastro...', tipo: 'loading' });
+
+    try {
+      let query = '';
+      let variables = {};
+
+      if (tipoUsuario === 'voluntario') {
+        query = `
+          mutation CriarVoluntario($nome: String!, $email: String!, $senha: String!, $telefone: String!) {
+            criarVoluntario(nome: $nome, email: $email, senha: $senha, telefone: $telefone) {
+              _id
+              nome
+            }
+          }
+        `;
+        variables = { nome, email, senha, telefone };
+      } else {
+        query = `
+          mutation CriarOng($nome: String!, $nomeFantasia: String!, $email: String!, $cidade: String!, $senha: String!, $cnpj: String!) {
+            criarOng(nome: $nome, nomeFantasia: $nomeFantasia, email: $email, cidade: $cidade, senha: $senha, cnpj: $cnpj) {
+              _id
+              nomeFantasia
+            }
+          }
+        `;
+        variables = { nome: razaoSocial || nomeFantasia, nomeFantasia, email, cidade, senha, cnpj };
+      }
+
+      const resposta = await fetch('http://localhost:3000/graphql', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query, variables })
+      });
+
+      const dados = await resposta.json();
+
+      if (dados.errors) {
+        setStatus({ mensagem: 'Erro: ' + dados.errors[0].message, tipo: 'erro' });
+      } else {
+        setStatus({ mensagem: 'Cadastro realizado com sucesso! A redirecionar...', tipo: 'sucesso' });
+        
+        // CORREÇÃO CRUCIAL AQUI: Define explicitamente o papel correto para o localStorage
+        if (tipoUsuario === 'voluntario') {
+          localStorage.setItem('role', 'VOLUNTARIO');
+          localStorage.setItem('userName', nome);
+        } else {
+          localStorage.setItem('role', 'ONG');
+          localStorage.setItem('userName', nomeFantasia || 'Instituição Parceira');
+        }
+        
+        setTimeout(() => {
+          navigate('/vagas');
+        }, 2000);
+      }
+    } catch (erro) {
+      console.error("Detalhes do erro:", erro);
+      setStatus({ mensagem: 'Erro de ligação com o servidor.', tipo: 'erro' });
+    }
+  };
+
   return (
     <div className="min-h-screen w-full bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans relative overflow-hidden">
       
-      {/* Efeitos de Fundo */}
       <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-400/20 blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full bg-emerald-400/10 blur-[120px] pointer-events-none"></div>
 
-      {/* Botão Voltar */}
       <div className="absolute top-6 left-6 md:top-8 md:left-10 z-50">
         <Link to="/" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors bg-white/60 backdrop-blur-md px-5 py-2.5 rounded-full border border-slate-200/50 shadow-sm">
           <span>&larr;</span> Voltar para o início
@@ -38,33 +113,42 @@ export default function Cadastro() {
       <div className="sm:mx-auto sm:w-full sm:max-w-xl relative z-10">
         <div className="bg-white/80 backdrop-blur-xl py-8 px-6 shadow-xl shadow-slate-200/50 sm:rounded-[32px] sm:px-10 border border-white">
           
-          {/* Chave Seletora (Toggle) */}
+          {status.mensagem && (
+            <div className={`p-4 mb-6 rounded-2xl text-sm font-bold text-center ${status.tipo === 'erro' ? 'bg-red-50 text-red-600 border border-red-100' : status.tipo === 'sucesso' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 animate-pulse'}`}>
+              {status.mensagem}
+            </div>
+          )}
+
           <div className="flex p-1 bg-slate-100 rounded-2xl mb-8">
             <button 
               type="button"
-              onClick={() => setTipoUsuario('voluntario')}
+              onClick={() => { setTipoUsuario('voluntario'); setStatus({mensagem: '', tipo: ''}); }}
               className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${tipoUsuario === 'voluntario' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Sou Voluntário
             </button>
             <button 
               type="button"
-              onClick={() => setTipoUsuario('ong')}
+              onClick={() => { setTipoUsuario('ong'); setStatus({mensagem: '', tipo: ''}); }}
               className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${tipoUsuario === 'ong' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
             >
               Represento uma ONG
             </button>
           </div>
 
-          <form className="space-y-5" action="#" method="POST">
+          <form onSubmit={handleSubmit} className="space-y-5">
             
-            {/* Campos Dinâmicos: Mudam conforme a seleção */}
             {tipoUsuario === 'voluntario' ? (
-              // FORMULÁRIO DO VOLUNTÁRIO
               <>
-                <div>
-                  <label htmlFor="nome" className="block text-sm font-medium text-slate-700 mb-1">Nome completo</label>
-                  <input id="nome" name="nome" type="text" required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Ex: Júlio César" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Nome completo</label>
+                    <input type="text" value={nome} onChange={(e) => setNome(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="Ex: Júlio César" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
+                    <input type="text" value={telefone} onChange={(e) => setTelefone(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="(00) 00000-0000" />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-3">Áreas de interesse</label>
@@ -78,37 +162,45 @@ export default function Cadastro() {
                 </div>
               </>
             ) : (
-              // FORMULÁRIO DA ONG
               <>
-                <div>
-                  <label htmlFor="nomeFantasia" className="block text-sm font-medium text-slate-700 mb-1">Nome da ONG / Instituição</label>
-                  <input id="nomeFantasia" name="nomeFantasia" type="text" required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Ex: Instituto Educar" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Razão Social</label>
+                    <input type="text" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Razão Social" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Nome Fantasia</label>
+                    <input type="text" value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Nome Fantasia" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">CNPJ</label>
+                    <input type="text" value={cnpj} onChange={(e) => setCnpj(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="00.000.000/0000-00" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Cidade</label>
+                    <input type="text" value={cidade} onChange={(e) => setCidade(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="Ex: Campina Grande" />
+                  </div>
                 </div>
                 <div>
-                  <label htmlFor="cnpj" className="block text-sm font-medium text-slate-700 mb-1">CNPJ</label>
-                  <input id="cnpj" name="cnpj" type="text" required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all" placeholder="00.000.000/0000-00" />
-                </div>
-                <div>
-                  <label htmlFor="descricao" className="block text-sm font-medium text-slate-700 mb-1">Breve Descrição</label>
-                  <textarea id="descricao" name="descricao" rows="2" className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none" placeholder="Qual a missão da sua instituição?"></textarea>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Breve Descrição</label>
+                  <textarea value={descricao} onChange={(e) => setDescricao(e.target.value)} rows="2" className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none" placeholder="Qual a missão da sua instituição?"></textarea>
                 </div>
               </>
             )}
 
-            {/* Campos Comuns (Sempre aparecem) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">E-mail corporativo/pessoal</label>
-                <input id="email" name="email" type="email" required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all" placeholder="voce@exemplo.com" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all" placeholder="voce@exemplo.com" />
               </div>
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-                <input id="password" name="password" type="password" required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all" placeholder="••••••••" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all" placeholder="••••••••" />
               </div>
             </div>
 
             <div className="pt-4">
-              <button type="submit" className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-full shadow-md text-sm font-medium text-white transition-all hover:-translate-y-0.5 ${tipoUsuario === 'voluntario' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500'}`}>
+              <button type="submit" className={`w-full flex justify-center py-3.5 px-4 border border-transparent rounded-full shadow-md text-sm font-bold text-white transition-all hover:-translate-y-0.5 ${tipoUsuario === 'voluntario' ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 shadow-blue-200' : 'bg-emerald-600 hover:bg-emerald-700 focus:ring-emerald-500 shadow-emerald-200'}`}>
                 {tipoUsuario === 'voluntario' ? 'Concluir Cadastro de Voluntário' : 'Cadastrar Instituição'}
               </button>
             </div>

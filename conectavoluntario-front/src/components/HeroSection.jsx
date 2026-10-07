@@ -17,9 +17,6 @@ export default function HeroSection() {
           <Link to="/cadastro-voluntario" className="px-8 py-4 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-all hover:-translate-y-0.5 shadow-lg shadow-blue-600/30">
             Quero ser voluntário
           </Link>
-          <a href="#oportunidades" className="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-full font-medium hover:bg-slate-50 transition-all">
-            Explorar Vagas
-          </a>
         </div>
       </div>
     </section>

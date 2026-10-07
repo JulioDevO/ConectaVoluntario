@@ -1,19 +1,20 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
+import ExplorarVagas from './pages/ExplorarVagas';
+import CadastroVoluntario from './pages/CadastroVoluntario'; // Confirme se o nome do ficheiro está correto
 import Login from './pages/Login';
-import CadastroVoluntario from './pages/CadastroVoluntario';
-import PerfilUsuario from './pages/PerfilUsuario';
-import DashboardOng from './pages/DashboardOng'; 
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/vagas" element={<ExplorarVagas />} />
+        
+        {/* A rota precisa de corresponder exatamente ao link que está a usar */}
         <Route path="/cadastro-voluntario" element={<CadastroVoluntario />} />
-        <Route path="/perfil" element={<PerfilUsuario />} />
-        <Route path="/dashboard-ong" element={<DashboardOng />} /> {/* Adicione a rota */}
+        
+        <Route path="/login" element={<Login />} />
       </Routes>
     </Router>
   );
