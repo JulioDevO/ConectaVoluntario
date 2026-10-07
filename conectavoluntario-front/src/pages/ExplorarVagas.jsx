@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import CriarVaga from '../components/CriarVaga';
+import EditarVaga from '../components/EditarVaga';
 
 export default function ExplorarVagas() {
   const [vagas, setVagas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [vagaParaEditar, setVagaParaEditar] = useState(null);
 
-  // Lê quem está logado e normaliza para maiúsculas (evita conflitos de case)
   const tipoUsuario = (localStorage.getItem('role') || 'VOLUNTARIO').toUpperCase();
   const nomeUsuario = localStorage.getItem('userName') || (tipoUsuario === 'ONG' ? 'Instituição Parceira' : 'Voluntário(a)');
 
-  useEffect(() => {
+  const fetchVagas = () => {
     fetch('http://localhost:3000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,10 +42,14 @@ export default function ExplorarVagas() {
         setLoading(false);
       })
       .catch(erro => {
-        console.error("Detalhes do erro:", erro);
+        console.error(erro);
         setError(erro);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchVagas();
   }, []);
 
   if (loading) {
@@ -68,8 +75,6 @@ export default function ExplorarVagas() {
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
       <div className="max-w-5xl mx-auto">
-        
-        {/* Barra superior com Voltar e Identificação de Perfil Ativo */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
           <Link to="/" className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-600 transition-colors">
             <span>&larr;</span> Voltar para o menu principal
@@ -101,9 +106,11 @@ export default function ExplorarVagas() {
             </p>
           </div>
           
-          {/* RENDERIZAÇÃO CONDICIONAL: Só aparece se o perfil logado for ONG */}
           {tipoUsuario === 'ONG' && (
-            <button className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform hover:-translate-y-1 whitespace-nowrap">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-xl shadow-lg transition-transform hover:-translate-y-1 whitespace-nowrap"
+            >
               + Nova Vaga
             </button>
           )}
@@ -134,10 +141,14 @@ export default function ExplorarVagas() {
                   {vaga.descricao}
                 </p>
                 
-                {/* RENDERIZAÇÃO CONDICIONAL DOS BOTÕES DE AÇÃO */}
                 {tipoUsuario === 'ONG' ? (
                   <div className="flex gap-3">
-                    <button className="flex-1 bg-white text-slate-700 font-bold py-3 px-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 transition-colors">Editar</button>
+                    <button 
+                      onClick={() => setVagaParaEditar(vaga)}
+                      className="flex-1 bg-white text-slate-700 font-bold py-3 px-4 rounded-xl border-2 border-slate-200 hover:border-slate-300 transition-colors"
+                    >
+                      Editar
+                    </button>
                     <button className="flex-1 bg-slate-900 text-white font-bold py-3 px-4 rounded-xl hover:bg-slate-800 transition-colors">Inscritos</button>
                   </div>
                 ) : (
@@ -148,6 +159,27 @@ export default function ExplorarVagas() {
           </div>
         )}
       </div>
+
+      {isModalOpen && (
+        <CriarVaga 
+          onClose={() => setIsModalOpen(false)} 
+          onVagaCriada={() => {
+            setIsModalOpen(false);
+            fetchVagas();
+          }} 
+        />
+      )}
+
+      {vagaParaEditar && (
+        <EditarVaga 
+          vaga={vagaParaEditar}
+          onClose={() => setVagaParaEditar(null)} 
+          onVagaAtualizada={() => {
+            setVagaParaEditar(null);
+            fetchVagas();
+          }} 
+        />
+      )}
     </div>
   );
 }
