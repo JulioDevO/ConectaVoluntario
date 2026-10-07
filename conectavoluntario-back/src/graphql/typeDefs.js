@@ -41,6 +41,7 @@ const typeDefs = gql`
     criarOng(nome: String!, nomeFantasia: String!, email: String!, cidade: String!, senha: String!, cnpj: String!): Ong
     removerOng(id: ID!): Ong
     criarVaga(titulo: String!, descricao: String!, formato: String!, localizacao: String!, horario: String!, status: String!, ongId: ID!): Vaga
+    atualizarVaga(id: ID!, titulo: String!, descricao: String!, localizacao: String!, formato: String!, horario: String!): Vaga
     removerVaga(id: ID!): Vaga
   }
 `;
