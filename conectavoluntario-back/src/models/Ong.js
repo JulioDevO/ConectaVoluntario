@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { criptografarSenhaAntesDeSalvar, removerSenhaDoJson } = require('../utils/senha');
 
 const ongSchema = new mongoose.Schema({
   nomeFantasia: {
@@ -27,5 +28,8 @@ const ongSchema = new mongoose.Schema({
     default: Date.now,
   }
 });
+
+ongSchema.pre('save', criptografarSenhaAntesDeSalvar);
+ongSchema.set('toJSON', { transform: removerSenhaDoJson });
 
 module.exports = mongoose.model('Ong', ongSchema);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { limparSessao } from '../auth';
 
 export default function CadastroVoluntario() {
   const navigate = useNavigate();
@@ -71,19 +72,15 @@ export default function CadastroVoluntario() {
       if (dados.errors) {
         setStatus({ mensagem: 'Erro: ' + dados.errors[0].message, tipo: 'erro' });
       } else {
-        setStatus({ mensagem: 'Cadastro realizado com sucesso! A redirecionar...', tipo: 'sucesso' });
-        
-        // CORREÇÃO CRUCIAL AQUI: Define explicitamente o papel correto para o localStorage
-        if (tipoUsuario === 'voluntario') {
-          localStorage.setItem('role', 'VOLUNTARIO');
-          localStorage.setItem('userName', nome);
-        } else {
-          localStorage.setItem('role', 'ONG');
-          localStorage.setItem('userName', nomeFantasia || 'Instituição Parceira');
-        }
-        
+        setStatus({ mensagem: 'Cadastro realizado com sucesso! Faça login para entrar.', tipo: 'sucesso' });
+
+        // Cadastro NÃO autentica: nenhuma sessão é criada aqui.
+        // Limpa qualquer sessão anterior e envia o usuário para a tela de login.
+        limparSessao();
+        setSenha('');
+
         setTimeout(() => {
-          navigate('/vagas');
+          navigate('/login', { replace: true });
         }, 2000);
       }
     } catch (erro) {

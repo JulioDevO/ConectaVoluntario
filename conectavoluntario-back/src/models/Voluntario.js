@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { criptografarSenhaAntesDeSalvar, removerSenhaDoJson } = require('../utils/senha');
 
 const voluntarioSchema = new mongoose.Schema({
   nome: {
@@ -26,5 +27,8 @@ const voluntarioSchema = new mongoose.Schema({
     default: Date.now,
   }
 });
+
+voluntarioSchema.pre('save', criptografarSenhaAntesDeSalvar);
+voluntarioSchema.set('toJSON', { transform: removerSenhaDoJson });
 
 module.exports = mongoose.model('Voluntario', voluntarioSchema);

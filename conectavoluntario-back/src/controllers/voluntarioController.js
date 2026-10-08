@@ -1,6 +1,7 @@
 const Voluntario = require('../models/Voluntario');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/env');
+const { conferirSenha } = require('../utils/senha');
 
 exports.loginVoluntario = async (req, res) => {
   try {
@@ -8,18 +9,28 @@ exports.loginVoluntario = async (req, res) => {
     if (!email || !senha) return res.status(400).json({ erro: 'Informe e-mail e senha.' });
 
     const voluntario = await Voluntario.findOne({ email });
-    if (!voluntario) return res.status(404).json({ erro: 'Usuário não encontrado.' });
+    // Mesma resposta para "e-mail não existe" e "senha errada":
+    // assim ninguém descobre quais e-mails estão cadastrados.
+    if (!voluntario) return res.status(401).json({ erro: 'Credenciais inválidas.' });
 
-    const senhaValida = await bcrypt.compare(senha, voluntario.senha);
+    const senhaValida = await conferirSenha(voluntario, senha);
     if (!senhaValida) return res.status(401).json({ erro: 'Credenciais inválidas.' });
 
     const token = jwt.sign(
-      { id: voluntario._id, email: voluntario.email },
-      process.env.JWT_SECRET,
+      { id: voluntario._id, tipo: 'voluntario' },
+      jwtSecret,
       { expiresIn: '1d' }
     );
 
-    return res.status(200).json({ mensagem: 'Login realizado com sucesso!', token });
+    return res.status(200).json({
+      mensagem: 'Login realizado com sucesso!',
+      token,
+      voluntario: {
+        id: voluntario._id,
+        nome: voluntario.nome,
+        email: voluntario.email
+      }
+    });
   } catch (error) {
     return res.status(500).json({ erro: 'Erro ao realizar login', detalhes: error.message });
   }
