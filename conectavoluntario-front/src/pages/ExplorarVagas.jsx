@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { limparSessao, estaAutenticado } from '../auth';
 
 export default function ExplorarVagas() {
   const navigate = useNavigate();
@@ -30,8 +31,10 @@ export default function ExplorarVagas() {
 
   const [toast, setToast] = useState({ visivel: false, mensagem: '', tipo: '' });
 
-  const tipoUsuario = (localStorage.getItem('role') || 'VISITANTE').toUpperCase();
-  const nomeUsuario = localStorage.getItem('userName') || (
+  // Sem login válido (token do back-end), a pessoa é VISITANTE: vê as vagas, mas não se inscreve.
+  const logado = estaAutenticado();
+  const tipoUsuario = logado ? (localStorage.getItem('role') || 'VISITANTE').toUpperCase() : 'VISITANTE';
+  const nomeUsuario = (logado && localStorage.getItem('userName')) || (
     tipoUsuario === 'ONG' ? 'Instituição Parceira' : 
     tipoUsuario === 'VOLUNTARIO' ? 'Voluntário(a)' : 'Visitante'
   );
@@ -161,8 +164,9 @@ export default function ExplorarVagas() {
   };
 
   const handleToggleCandidatura = (id) => {
-    if (tipoUsuario === 'VISITANTE') {
-      navigate('/login');
+    // Só voluntário logado pode se inscrever
+    if (tipoUsuario !== 'VOLUNTARIO') {
+      if (tipoUsuario === 'VISITANTE') navigate('/login');
       return;
     }
 
@@ -226,7 +230,7 @@ export default function ExplorarVagas() {
             {tipoUsuario === 'VISITANTE' ? (
               <Link to="/login" className="text-xs text-blue-600 hover:underline font-bold ml-2 bg-blue-50 px-3 py-1.5 rounded-lg">Fazer Login</Link>
             ) : (
-              <button onClick={() => { localStorage.removeItem('role'); localStorage.removeItem('userName'); window.location.reload(); }} className="text-xs text-red-600 hover:underline font-bold ml-2 bg-red-50 px-3 py-1.5 rounded-lg">Sair</button>
+              <button onClick={() => { limparSessao(); navigate('/login', { replace: true }); }} className="text-xs text-red-600 hover:underline font-bold ml-2 bg-red-50 px-3 py-1.5 rounded-lg">Sair</button>
             )}
           </div>
         </div>

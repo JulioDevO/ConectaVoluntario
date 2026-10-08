@@ -1,6 +1,7 @@
 const Ong = require('../models/Ong');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/env');
+const { conferirSenha } = require('../utils/senha');
 
 exports.listarOngs = async (req, res) => {
   try {
@@ -97,6 +98,10 @@ exports.login = async (req, res) => {
   try {
     const { email, senha } = req.body;
 
+    if (!email || !senha) {
+      return res.status(400).json({ erro: 'Informe e-mail e senha.' });
+    }
+
     // 1. Verifica se a ONG existe no banco
     const ong = await Ong.findOne({ email });
     if (!ong) {
@@ -104,7 +109,7 @@ exports.login = async (req, res) => {
     }
 
     // 2. Compara a senha digitada com o hash salvo
-    const senhaValida = await bcrypt.compare(senha, ong.senha);
+    const senhaValida = await conferirSenha(ong, senha);
     if (!senhaValida) {
       return res.status(401).json({ erro: 'Credenciais inválidas' });
     }
@@ -112,7 +117,7 @@ exports.login = async (req, res) => {
     // 3. Gera o Token de Segurança (JWT)
     const token = jwt.sign(
       { id: ong._id, tipo: 'ong' }, // Informações guardadas no token
-      process.env.JWT_SECRET || 'chave_secreta_padrao',
+      jwtSecret,
       { expiresIn: '1d' } // O token expira em 1 dia
     );
 

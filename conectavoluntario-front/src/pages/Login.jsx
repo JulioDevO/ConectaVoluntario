@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { salvarSessao, limparSessao } from '../auth';
+
+const API_URL = 'http://localhost:3000';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -8,66 +11,63 @@ export default function Login() {
   const [senha, setSenha] = useState('');
   const [status, setStatus] = useState({ mensagem: '', tipo: '' });
 
+  // Envia e-mail e senha para uma rota de login do back-end.
+  // A senha é conferida no servidor (bcrypt), nunca no navegador.
+  const tentarLogin = async (url) => {
+    const resposta = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha })
+    });
+    const dados = await resposta.json().catch(() => ({}));
+    return { ok: resposta.ok, status: resposta.status, dados };
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setStatus({ mensagem: 'A verificar credenciais...', tipo: 'loading' });
-
-    let autenticado = false;
+    limparSessao();
 
     try {
-      // 1. TENTA ENCONTRAR O E-MAIL NAS ONGS DO BANCO DE DADOS
-      const resOng = await fetch('http://localhost:3000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: `{ listarOngs { nomeFantasia email } }` })
-      });
-      const dataOng = await resOng.json();
-      const ongEncontrada = dataOng.data?.listarOngs?.find(o => o.email === email);
-      
-      if (ongEncontrada) {
-        localStorage.setItem('role', 'ONG');
-        localStorage.setItem('userName', ongEncontrada.nomeFantasia || 'Instituição Parceira');
-        autenticado = true;
-      } else {
-        // 2. SE NÃO ACHOU NAS ONGS, TENTA ENCONTRAR NOS VOLUNTÁRIOS
-        const resVol = await fetch('http://localhost:3000/graphql', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: `{ listarVoluntarios { nome email } }` })
-        });
-        const dataVol = await resVol.json();
-        const volEncontrado = dataVol.data?.listarVoluntarios?.find(v => v.email === email);
+      // 1. Tenta autenticar como ONG
+      let resultado = await tentarLogin(`${API_URL}/api/ongs/login`);
+      let sessao = null;
 
-        if (volEncontrado) {
-          localStorage.setItem('role', 'VOLUNTARIO');
-          localStorage.setItem('userName', volEncontrado.nome || 'Voluntário');
-          autenticado = true;
+      if (resultado.ok) {
+        sessao = {
+          token: resultado.dados.token,
+          role: 'ONG',
+          userName: resultado.dados.ong?.nomeFantasia || 'Instituição Parceira',
+          userId: resultado.dados.ong?.id
+        };
+      } else if (resultado.status === 401) {
+        // 2. Não é ONG (ou a senha não confere): tenta como voluntário
+        resultado = await tentarLogin(`${API_URL}/api/voluntarios/login`);
+
+        if (resultado.ok) {
+          sessao = {
+            token: resultado.dados.token,
+            role: 'VOLUNTARIO',
+            userName: resultado.dados.voluntario?.nome || 'Voluntário',
+            userId: resultado.dados.voluntario?.id
+          };
         }
       }
-    } catch (erro) {
-      console.warn("Aviso: Falha de comunicação com o servidor GraphQL.", erro);
-    }
 
-    // 3. FALLBACK ESTRITO (Caso o servidor falhe na hora da apresentação, 
-    // ele só aceita exatamente os e-mails de teste, rejeitando "qualquer coisa")
-    if (!autenticado) {
-      if (email === 'ong.teste@email.com' && senha === '12345678') {
-        localStorage.setItem('role', 'ONG');
-        localStorage.setItem('userName', 'ONG Teste Solidário');
-        autenticado = true;
-      } else if (email === 'voluntario.teste@email.com' && senha === '12345678') {
-        localStorage.setItem('role', 'VOLUNTARIO');
-        localStorage.setItem('userName', 'Teste Voluntário');
-        autenticado = true;
+      // 3. Resultado final
+      if (sessao && sessao.token) {
+        salvarSessao(sessao);
+        setSenha('');
+        setStatus({ mensagem: 'Login efetuado com sucesso!', tipo: 'sucesso' });
+        setTimeout(() => navigate('/vagas', { replace: true }), 1500);
+      } else if (resultado.status === 401) {
+        setStatus({ mensagem: 'E-mail ou senha incorretos.', tipo: 'erro' });
+      } else {
+        setStatus({ mensagem: 'Não foi possível fazer login. Tente novamente.', tipo: 'erro' });
       }
-    }
-
-    // 4. RESULTADO FINAL
-    if (autenticado) {
-      setStatus({ mensagem: 'Login efetuado com sucesso!', tipo: 'sucesso' });
-      setTimeout(() => navigate('/vagas'), 1500);
-    } else {
-      setStatus({ mensagem: 'E-mail ou senha incorretos.', tipo: 'erro' });
+    } catch (erro) {
+      console.error('Falha de comunicação com o servidor:', erro);
+      setStatus({ mensagem: 'Erro de ligação com o servidor.', tipo: 'erro' });
     }
   };
 
