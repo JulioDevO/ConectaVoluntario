@@ -1,125 +1,85 @@
-const Vaga = require('../models/Vaga');
-const Voluntario = require('../models/Voluntario');
+const {
+  ApolloError,
+  AuthenticationError,
+  ForbiddenError,
+  UserInputError,
+} = require('apollo-server-express');
 const Ong = require('../models/Ong');
+const Voluntario = require('../models/Voluntario');
+const contaService = require('../services/contaService');
+const vagaService = require('../services/vagaService');
+const { normalizarErro } = require('../utils/erros');
+
+// Traduz o erro da regra de negócio para o erro correspondente do Apollo.
+function paraErroGraphQL(error) {
+  const { status, message } = normalizarErro(error);
+  if (status === 401) return new AuthenticationError(message);
+  if (status === 403) return new ForbiddenError(message);
+  if (status >= 500) return new ApolloError(message, 'INTERNAL_SERVER_ERROR');
+  return new UserInputError(message, { status });
+}
+
+// Envolve todos os resolvers de uma seção para tratar erros em um só lugar.
+function comTratamentoDeErros(resolvers) {
+  return Object.fromEntries(
+    Object.entries(resolvers).map(([nome, fn]) => [
+      nome,
+      async (...args) => {
+        try {
+          return await fn(...args);
+        } catch (error) {
+          throw paraErroGraphQL(error);
+        }
+      },
+    ])
+  );
+}
+
+// Datas saem em formato ISO (ex.: 2026-10-08T12:00:00.000Z)
+const paraISO = (data) => (data ? new Date(data).toISOString() : null);
 
 const resolvers = {
-  Query: {
-    mensagem: () => "Olá! O GraphQL e o Apollo estão funcionando 100%!",
-    
-    listarVagas: async () => {
-      try {
-        return await Vaga.find().lean();
-      } catch (erro) {
-        console.error("Erro ao buscar vagas:", erro);
-        throw new Error("Falha ao carregar as vagas.");
-      }
-    },
+  Query: comTratamentoDeErros({
+    mensagem: () => 'API do Conecta Voluntário funcionando!',
+    listarVagas: (_, __, { usuario }) => vagaService.listarVagas(usuario),
+    buscarVaga: (_, { id }, { usuario }) => vagaService.buscarVaga(id, usuario),
+    listarOngs: () => contaService.listarOngs(),
+    listarVoluntarios: (_, __, { usuario }) => contaService.listarVoluntarios(usuario),
+    listarCandidatos: (_, { vagaId }, { usuario }) => vagaService.listarCandidatos(vagaId, usuario),
+    minhasCandidaturas: (_, __, { usuario }) => vagaService.minhasCandidaturas(usuario),
+  }),
 
-    listarVoluntarios: async () => {
-      try {
-        return await Voluntario.find().lean();
-      } catch (erro) {
-        console.error("Erro ao buscar voluntários:", erro);
-        throw new Error("Falha ao carregar os voluntários.");
-      }
-    },
+  Mutation: comTratamentoDeErros({
+    criarVoluntario: (_, { input }) => contaService.cadastrarVoluntario(input),
+    criarOng: (_, { input }) => contaService.cadastrarOng(input),
+    login: (_, { email, senha }) => contaService.autenticarQualquer(email, senha),
 
-    listarOngs: async () => {
-      try {
-        return await Ong.find().lean();
-      } catch (erro) {
-        console.error("Erro ao buscar ONGs:", erro);
-        throw new Error("Falha ao carregar as ONGs.");
-      }
-    }
+    criarVaga: (_, { input }, { usuario }) => vagaService.criarVaga(input, usuario),
+    atualizarVaga: (_, { id, input }, { usuario }) => vagaService.atualizarVaga(id, input, usuario),
+    removerVaga: (_, { id }, { usuario }) => vagaService.removerVaga(id, usuario),
+    atualizarStatusCandidatura: (_, { vagaId, voluntarioId, status }, { usuario }) =>
+      vagaService.atualizarStatusCandidatura(vagaId, voluntarioId, status, usuario),
+    removerOng: (_, { id }, { usuario }) => contaService.removerOng(id, usuario),
+
+    candidatar: (_, { vagaId }, { usuario }) => vagaService.candidatar(vagaId, usuario),
+    cancelarCandidatura: (_, { vagaId }, { usuario }) => vagaService.cancelarCandidatura(vagaId, usuario),
+    removerVoluntario: (_, { id }, { usuario }) => contaService.removerVoluntario(id, usuario),
+  }),
+
+  // Campos que dependem de outras coleções (só são buscados se o cliente pedir)
+  Vaga: {
+    ong: (vaga) => Ong.findById(vaga.ongId).select('-senha').lean().exec(),
+    dataCriacao: (vaga) => paraISO(vaga.dataCriacao),
   },
-
-  Mutation: {
-    criarVoluntario: async (_, { nome, email, senha, telefone }) => {
-      try {
-        const novoVoluntario = new Voluntario({ nome, email, senha, telefone });
-        await novoVoluntario.save();
-        return novoVoluntario;
-      } catch (erro) {
-        console.error("Erro ao cadastrar voluntário:", erro);
-        throw new Error("Falha ao criar o voluntário.");
-      }
-    },
-
-    removerVoluntario: async (_, { id }) => {
-      try {
-        const voluntarioRemovido = await Voluntario.findByIdAndDelete(id);
-        if (!voluntarioRemovido) {
-          throw new Error("Voluntário não encontrado.");
-        }
-        return voluntarioRemovido;
-      } catch (erro) {
-        console.error("Erro ao remover voluntário:", erro);
-        throw new Error("Falha ao remover o voluntário.");
-      }
-    },
-
-    criarOng: async (_, { nome, nomeFantasia, email, cidade, senha, cnpj }) => {
-      try {
-        const novaOng = new Ong({ nome, nomeFantasia, email, cidade, senha, cnpj });
-        await novaOng.save();
-        return novaOng;
-      } catch (erro) {
-        console.error("Erro ao cadastrar ONG:", erro);
-        throw new Error("Falha ao criar a ONG.");
-      }
-    },
-
-    removerOng: async (_, { id }) => {
-      try {
-        const ongRemovida = await Ong.findByIdAndDelete(id);
-        if (!ongRemovida) {
-          throw new Error("ONG não encontrada.");
-        }
-        return ongRemovida;
-      } catch (erro) {
-        console.error("Erro ao remover ONG:", erro);
-        throw new Error("Falha ao remover a ONG.");
-      }
-    },
-
-    criarVaga: async (_, args) => {
-      try {
-        const novaVaga = new Vaga(args);
-        await novaVaga.save();
-        return novaVaga;
-      } catch (erro) {
-        console.error("Erro ao cadastrar vaga:", erro);
-        throw new Error("Falha ao criar a vaga.");
-      }
-    },
-
-    atualizarVaga: async (_, { id, ...args }) => {
-      try {
-        const vagaAtualizada = await Vaga.findByIdAndUpdate(id, args, { new: true });
-        if (!vagaAtualizada) {
-          throw new Error("Vaga não encontrada.");
-        }
-        return vagaAtualizada;
-      } catch (erro) {
-        console.error("Erro ao atualizar vaga:", erro);
-        throw new Error("Falha ao atualizar a vaga.");
-      }
-    },
-
-    removerVaga: async (_, { id }) => {
-      try {
-        const vagaRemovida = await Vaga.findByIdAndDelete(id);
-        if (!vagaRemovida) {
-          throw new Error("Vaga não encontrada.");
-        }
-        return vagaRemovida;
-      } catch (erro) {
-        console.error("Erro ao remover vaga:", erro);
-        throw new Error("Falha ao remover a vaga.");
-      }
-    }
-  }
+  Candidatura: {
+    // Em listarCandidatos o service já devolve o voluntário populado
+    voluntario: (candidatura) =>
+      candidatura.voluntario ||
+      Voluntario.findById(candidatura.voluntarioId).select('-senha').lean().exec(),
+    dataAplicacao: (candidatura) => paraISO(candidatura.dataAplicacao),
+  },
+  Ong: { dataCriacao: (ong) => paraISO(ong.dataCriacao) },
+  Voluntario: { dataCriacao: (voluntario) => paraISO(voluntario.dataCriacao) },
 };
 
 module.exports = resolvers;

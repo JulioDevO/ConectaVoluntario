@@ -1,73 +1,36 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { salvarSessao, limparSessao } from '../auth';
-
-const API_URL = 'http://localhost:3000';
+import { login } from '../api';
 
 export default function Login() {
   const navigate = useNavigate();
-  
+
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [status, setStatus] = useState({ mensagem: '', tipo: '' });
 
-  // Envia e-mail e senha para uma rota de login do back-end.
   // A senha é conferida no servidor (bcrypt), nunca no navegador.
-  const tentarLogin = async (url) => {
-    const resposta = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha })
-    });
-    const dados = await resposta.json().catch(() => ({}));
-    return { ok: resposta.ok, status: resposta.status, dados };
-  };
-
+  // O back-end descobre sozinho se a conta é de ONG ou de voluntário.
   const handleLogin = async (e) => {
     e.preventDefault();
     setStatus({ mensagem: 'A verificar credenciais...', tipo: 'loading' });
     limparSessao();
 
     try {
-      // 1. Tenta autenticar como ONG
-      let resultado = await tentarLogin(`${API_URL}/api/ongs/login`);
-      let sessao = null;
+      const sessao = await login(email, senha);
 
-      if (resultado.ok) {
-        sessao = {
-          token: resultado.dados.token,
-          role: 'ONG',
-          userName: resultado.dados.ong?.nomeFantasia || 'Instituição Parceira',
-          userId: resultado.dados.ong?.id
-        };
-      } else if (resultado.status === 401) {
-        // 2. Não é ONG (ou a senha não confere): tenta como voluntário
-        resultado = await tentarLogin(`${API_URL}/api/voluntarios/login`);
-
-        if (resultado.ok) {
-          sessao = {
-            token: resultado.dados.token,
-            role: 'VOLUNTARIO',
-            userName: resultado.dados.voluntario?.nome || 'Voluntário',
-            userId: resultado.dados.voluntario?.id
-          };
-        }
-      }
-
-      // 3. Resultado final
-      if (sessao && sessao.token) {
-        salvarSessao(sessao);
-        setSenha('');
-        setStatus({ mensagem: 'Login efetuado com sucesso!', tipo: 'sucesso' });
-        setTimeout(() => navigate('/vagas', { replace: true }), 1500);
-      } else if (resultado.status === 401) {
-        setStatus({ mensagem: 'E-mail ou senha incorretos.', tipo: 'erro' });
-      } else {
-        setStatus({ mensagem: 'Não foi possível fazer login. Tente novamente.', tipo: 'erro' });
-      }
+      salvarSessao({
+        token: sessao.token,
+        role: sessao.tipo.toUpperCase(),
+        userName: sessao.nome,
+        userId: sessao.id,
+      });
+      setSenha('');
+      setStatus({ mensagem: 'Login efetuado com sucesso!', tipo: 'sucesso' });
+      setTimeout(() => navigate('/vagas', { replace: true }), 800);
     } catch (erro) {
-      console.error('Falha de comunicação com o servidor:', erro);
-      setStatus({ mensagem: 'Erro de ligação com o servidor.', tipo: 'erro' });
+      setStatus({ mensagem: erro.message, tipo: 'erro' });
     }
   };
 

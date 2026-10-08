@@ -1,23 +1,41 @@
-// src/middlewares/auth.js
 const jwt = require('jsonwebtoken');
-const { jwtSecret } = require('../config/env'); // Usa o secret validado
+const { jwtSecret } = require('../config/env');
+const { ErroHttp } = require('../utils/erros');
+const { exigirLogin } = require('../utils/permissoes');
 
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ erro: 'Acesso negado. Token não fornecido.' });
-  }
-
-  const token = authHeader.split(' ')[1];
+// Lê o header "Authorization: Bearer <token>" e devolve { id, tipo } ou null.
+// Não lança erro: quem decide se o login é obrigatório é a rota/resolver.
+function lerUsuario(req) {
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Bearer ')) return null;
 
   try {
-    const payload = jwt.verify(token, jwtSecret);
-    req.usuario = payload; // Salva os dados do usuário para o Controller poder usar
-    next(); // Passa pela catraca e vai para a rota
-  } catch (err) {
-    return res.status(401).json({ erro: 'Token inválido ou expirado.' });
+    const { id, tipo } = jwt.verify(header.slice(7), jwtSecret);
+    return { id, tipo };
+  } catch {
+    return null;
   }
 }
 
-module.exports = authMiddleware;
+// Middleware: carrega req.usuario quando há token válido (rotas públicas que se adaptam ao usuário).
+function identificarUsuario(req, res, next) {
+  req.usuario = lerUsuario(req);
+  next();
+}
+
+// Middleware: exige login (e, opcionalmente, o tipo da conta).
+// Uso: router.post('/', exigirAutenticacao('ong'), controller)
+const exigirAutenticacao = (...tipos) => (req, res, next) => {
+  const temToken = (req.headers.authorization || '').startsWith('Bearer ');
+  req.usuario = lerUsuario(req);
+
+  try {
+    if (!req.usuario && temToken) throw new ErroHttp(401, 'Token inválido ou expirado.');
+    exigirLogin(req.usuario, ...tipos);
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { lerUsuario, identificarUsuario, exigirAutenticacao };

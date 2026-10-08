@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { limparSessao } from '../auth';
+import { graphql } from '../api';
 
 export default function CadastroVoluntario() {
   const navigate = useNavigate();
@@ -36,56 +37,31 @@ export default function CadastroVoluntario() {
     setStatus({ mensagem: 'A processar cadastro...', tipo: 'loading' });
 
     try {
-      let query = '';
-      let variables = {};
-
       if (tipoUsuario === 'voluntario') {
-        query = `
-          mutation CriarVoluntario($nome: String!, $email: String!, $senha: String!, $telefone: String!) {
-            criarVoluntario(nome: $nome, email: $email, senha: $senha, telefone: $telefone) {
-              _id
-              nome
-            }
-          }
-        `;
-        variables = { nome, email, senha, telefone };
+        await graphql(
+          `mutation CriarVoluntario($input: VoluntarioInput!) {
+            criarVoluntario(input: $input) { _id nome }
+          }`,
+          { input: { nome, email, senha, telefone, causas: interessesSelecionados } }
+        );
       } else {
-        query = `
-          mutation CriarOng($nome: String!, $nomeFantasia: String!, $email: String!, $cidade: String!, $senha: String!, $cnpj: String!) {
-            criarOng(nome: $nome, nomeFantasia: $nomeFantasia, email: $email, cidade: $cidade, senha: $senha, cnpj: $cnpj) {
-              _id
-              nomeFantasia
-            }
-          }
-        `;
-        variables = { nome: razaoSocial || nomeFantasia, nomeFantasia, email, cidade, senha, cnpj };
+        await graphql(
+          `mutation CriarOng($input: OngInput!) {
+            criarOng(input: $input) { _id nomeFantasia }
+          }`,
+          { input: { nomeFantasia, razaoSocial, cnpj, email, senha, cidade, descricao } }
+        );
       }
 
-      const resposta = await fetch('http://localhost:3000/graphql', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables })
-      });
+      setStatus({ mensagem: 'Cadastro realizado com sucesso! Faça login para entrar.', tipo: 'sucesso' });
 
-      const dados = await resposta.json();
-
-      if (dados.errors) {
-        setStatus({ mensagem: 'Erro: ' + dados.errors[0].message, tipo: 'erro' });
-      } else {
-        setStatus({ mensagem: 'Cadastro realizado com sucesso! Faça login para entrar.', tipo: 'sucesso' });
-
-        // Cadastro NÃO autentica: nenhuma sessão é criada aqui.
-        // Limpa qualquer sessão anterior e envia o usuário para a tela de login.
-        limparSessao();
-        setSenha('');
-
-        setTimeout(() => {
-          navigate('/login', { replace: true });
-        }, 2000);
-      }
+      // Cadastro NÃO autentica: nenhuma sessão é criada aqui.
+      // Limpa qualquer sessão anterior e envia o usuário para a tela de login.
+      limparSessao();
+      setSenha('');
+      setTimeout(() => navigate('/login', { replace: true }), 2000);
     } catch (erro) {
-      console.error("Detalhes do erro:", erro);
-      setStatus({ mensagem: 'Erro de ligação com o servidor.', tipo: 'erro' });
+      setStatus({ mensagem: erro.message, tipo: 'erro' });
     }
   };
 
@@ -192,7 +168,7 @@ export default function CadastroVoluntario() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Senha</label>
-                <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all" placeholder="••••••••" />
+                <input type="password" minLength={6} value={senha} onChange={(e) => setSenha(e.target.value)} required className="appearance-none block w-full px-4 py-3 bg-white/50 border border-slate-300 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all" placeholder="••••••••" />
               </div>
             </div>
 
