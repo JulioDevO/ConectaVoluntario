@@ -4,23 +4,28 @@ const { criptografarSenhaAntesDeSalvar, removerSenhaDoJson } = require('../utils
 const voluntarioSchema = new mongoose.Schema({
   nome: {
     type: String,
-    required: true,
+    required: [true, 'Informe o nome.'],
+    trim: true,
   },
   email: {
     type: String,
-    required: true,
+    required: [true, 'Informe o e-mail.'],
     unique: true,
+    lowercase: true,
+    trim: true,
   },
   senha: {
     type: String,
-    required: true,
+    required: [true, 'Informe a senha.'],
   },
   telefone: {
     type: String,
-    required: true, 
+    required: [true, 'Informe o telefone.'],
+    trim: true,
   },
   causas: [{
-    type: String
+    type: String,
+    trim: true,
   }],
   dataCriacao: {
     type: Date,

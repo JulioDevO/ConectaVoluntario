@@ -1,7 +1,7 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import ExplorarVagas from './pages/ExplorarVagas';
-import CadastroVoluntario from './pages/CadastroVoluntario'; // Confirme se o nome do ficheiro está correto
+import CadastroVoluntario from './pages/CadastroVoluntario';
 import Login from './pages/Login';
 
 function App() {
@@ -10,11 +10,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/vagas" element={<ExplorarVagas />} />
-        
-        {/* A rota precisa de corresponder exatamente ao link que está a usar */}
         <Route path="/cadastro-voluntario" element={<CadastroVoluntario />} />
-        
         <Route path="/login" element={<Login />} />
+        {/* Qualquer endereço desconhecido volta para o início */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

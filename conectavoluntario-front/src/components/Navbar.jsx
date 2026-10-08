@@ -1,20 +1,15 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getSessao, estaAutenticado, limparSessao } from "../auth";
 
 export default function Navbar() {
-  const [userData, setUserData] = useState({ userName: '', role: '' });
+  const navigate = useNavigate();
+  const logado = estaAutenticado();
+  const { userName } = getSessao();
 
-  useEffect(() => {
-    const storedName = localStorage.getItem('userName');
-    const storedRole = localStorage.getItem('role');
-
-    if (storedName) {
-      setUserData({
-        userName: storedName,
-        role: storedRole
-      });
-    }
-  }, []);
+  const sair = () => {
+    limparSessao();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-100">
@@ -53,17 +48,23 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          {userData.userName ? (
+          {logado ? (
             <>
               <span className="hidden md:block text-sm font-medium text-slate-600">
-                Olá, <strong className="text-blue-600">{userData.userName}</strong>
+                Olá, <strong className="text-blue-600">{userName}</strong>
               </span>
               <Link
-                to="/perfil"
+                to="/vagas"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-full text-sm font-medium transition-all shadow-sm"
               >
-                Meu Perfil
+                Ver Vagas
               </Link>
+              <button
+                onClick={sair}
+                className="text-sm font-medium text-slate-600 hover:text-red-600 transition-colors"
+              >
+                Sair
+              </button>
             </>
           ) : (
             <>

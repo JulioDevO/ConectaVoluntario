@@ -1,34 +1,50 @@
-const Vaga = require('../models/Vaga');
+const vagaService = require('../services/vagaService');
 
 exports.listarVagas = async (req, res) => {
-  try {
-    const vagas = await Vaga.find();
-    res.status(200).json(vagas);
-  } catch (error) {
-    res.status(500).json({ erro: 'Erro ao buscar vagas', detalhe: error.message });
-  }
+  res.status(200).json(await vagaService.listarVagas(req.usuario));
+};
+
+exports.buscarVagaPorId = async (req, res) => {
+  res.status(200).json(await vagaService.buscarVaga(req.params.id, req.usuario));
+};
+
+exports.minhasCandidaturas = async (req, res) => {
+  res.status(200).json(await vagaService.minhasCandidaturas(req.usuario));
 };
 
 exports.criarVaga = async (req, res) => {
-  try {
-    const { titulo, descricao, formato, localizacao, horario, ongId } = req.body;
+  const vaga = await vagaService.criarVaga(req.body, req.usuario);
+  res.status(201).json({ mensagem: 'Vaga publicada com sucesso!', vaga });
+};
 
-    const novaVaga = new Vaga({
-      titulo,
-      descricao,
-      formato,
-      localizacao,
-      horario,
-      ongId
-    });
+exports.atualizarVaga = async (req, res) => {
+  const vaga = await vagaService.atualizarVaga(req.params.id, req.body, req.usuario);
+  res.status(200).json({ mensagem: 'Vaga atualizada com sucesso!', vaga });
+};
 
-    await novaVaga.save();
+exports.deletarVaga = async (req, res) => {
+  await vagaService.removerVaga(req.params.id, req.usuario);
+  res.status(200).json({ mensagem: 'Vaga removida com sucesso!' });
+};
 
-    res.status(201).json({
-      mensagem: 'Vaga publicada com sucesso no banco de dados!',
-      vaga: novaVaga
-    });
-  } catch (error) {
-    res.status(400).json({ erro: 'Erro ao criar vaga', detalhe: error.message });
-  }
+exports.candidatar = async (req, res) => {
+  const vaga = await vagaService.candidatar(req.params.id, req.usuario);
+  res.status(201).json({ mensagem: 'Candidatura enviada com sucesso!', vaga });
+};
+
+exports.cancelarCandidatura = async (req, res) => {
+  const vaga = await vagaService.cancelarCandidatura(req.params.id, req.usuario);
+  res.status(200).json({ mensagem: 'Candidatura cancelada.', vaga });
+};
+
+exports.listarCandidatos = async (req, res) => {
+  res.status(200).json(await vagaService.listarCandidatos(req.params.id, req.usuario));
+};
+
+exports.atualizarStatusCandidatura = async (req, res) => {
+  const { status } = req.body || {};
+  const vaga = await vagaService.atualizarStatusCandidatura(
+    req.params.id, req.params.voluntarioId, status, req.usuario
+  );
+  res.status(200).json({ mensagem: 'Status da candidatura atualizado.', vaga });
 };
